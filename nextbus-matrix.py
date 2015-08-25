@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # NextBus scrolling marquee display for Adafruit RGB LED matrix (64x32).
 # Requires rgbmatrix.so library: github.com/adafruit/rpi-rgb-led-matrix
 
@@ -17,22 +19,22 @@ from rgbmatrix import Adafruit_RGBmatrix
 # lines/stops for your location, copy & paste results here.  The 4th
 # string on each line can then be edited for brevity if desired.
 stops = [
-  ( 'actransit', '210', '0702640', 'Ohlone College' ),
-  ( 'actransit', '232', '0704440', 'Fremont BART'   ),
-  ( 'actransit', '210', '0702630', 'Union Landing'  ),
-  ( 'actransit', '232', '0704430', 'NewPark Mall'   ) ]
+  ( 'BVG', 'Tra', 'S Prenzlauer Allee (Berlin)', 'Alexanderplatz', 0 ),
+  ( 'BVG', '\(Gl. 1\)', 'S Prenzlauer Allee (Berlin)', '', 0 ),
+  ( 'BVG', '\(Gl. 2\)', 'S Prenzlauer Allee (Berlin)', '', 0 ),
+  ( 'BVG', '\(Gl. [12]{1}\)', 'S Prenzlauer Allee (Berlin)', '', 1 )]
 
-maxPredictions = 3   # NextBus shows up to 5; limit to 3 for simpler display
-minTime        = 0   # Drop predictions below this threshold (minutes)
-shortTime      = 5   # Times less than this are displayed in red
-midTime        = 10  # Times less than this are displayed yellow
+maxPredictions = 1   # NextBus shows up to 5; limit to 3 for simpler display
+minTime        = -1   # Drop predictions below this threshold (minutes)
+shortTime      = 3   # Times less than this are displayed in red
+midTime        = 7  # Times less than this are displayed yellow
 
 width          = 64  # Matrix size (pixels) -- change for different matrix
 height         = 32  # types (incl. tiling).  Other code may need tweaks.
 matrix         = Adafruit_RGBmatrix(32, 2) # rows, chain length
-fps            = 20  # Scrolling speed (ish)
+fps            = 5  # Scrolling speed (ish)
 
-routeColor     = (255, 255, 255) # Color for route labels (usu. numbers)
+routeColor     = (  0,   0, 255) # Color for route labels (usu. numbers)
 descColor      = (110, 110, 110) # " for route direction/description
 longTimeColor  = (  0, 255,   0) # Ample arrival time = green
 midTimeColor   = (255, 255,   0) # Medium arrival time = yellow
@@ -40,11 +42,19 @@ shortTimeColor = (255,   0,   0) # Short arrival time = red
 minsColor      = (110, 110, 110) # Commans and 'minutes' labels
 noTimesColor   = (  0,   0, 255) # No predictions = blue
 
+#routeColor     = (255, 255, 255) # Color for route labels (usu. numbers)
+#descColor      = (255, 140, 0) # " for route direction/description
+#longTimeColor  = (255, 140, 0) # Ample arrival time = green
+#midTimeColor   = (255, 140, 0) # Medium arrival time = yellow
+#shortTimeColor = (255, 140, 0) # Short arrival time = red
+#minsColor      = (255, 140, 0) # Commans and 'minutes' labels
+#noTimesColor   = (255, 255, 255) # No predictions = blue
+
 # TrueType fonts are a bit too much for the Pi to handle -- slow updates and
 # it's hard to get them looking good at small sizes.  A small bitmap version
 # of Helvetica Regular taken from X11R6 standard distribution works well:
 font           = ImageFont.load(os.path.dirname(os.path.realpath(__file__))
-                   + '/helvR08.pil')
+                   + '/fonts/helvetica-8.pil')
 fontYoffset    = -2  # Scoot up a couple lines so descenders aren't cropped
 
 
@@ -71,7 +81,7 @@ tileWidth = font.getsize(
   '88' *  maxPredictions    +          # 2 digits for minutes
   ', ' * (maxPredictions-1) +          # comma+space between times
   ' minutes')[0]                       # 1 space + 'minutes' at end
-w = font.getsize('No Predictions')[0]  # Label when no times are available
+w = font.getsize('XX')[0]  # Label when no times are available
 if w > tileWidth:                      # If that's wider than the route
 	tileWidth = w                  # description, use as tile width.
 predictList = []                       # Clear list
@@ -87,26 +97,34 @@ class tile:
 	def __init__(self, x, y, p):
 		self.x = x
 		self.y = y
+		self.predictionSize = 2
 		self.p = p  # Corresponding predictList[] object
 
 	def draw(self):
 		x     = self.x
-		label = self.p.data[1] + ' ' # Route number or code
-		draw.text((x, self.y + fontYoffset), label, font=font,
-		  fill=routeColor)
-		x    += font.getsize(label)[0]
-		label = self.p.data[3]       # Route direction/desc
+		#label = self.p.data[1] 
+		
+		# Route direction/desc
+		label = self.p.displayDirection      
 		draw.text((x, self.y + fontYoffset), label, font=font,
 		  fill=descColor)
-		x     = self.x
+		
+		# Route number or code
+		label = self.p.displayLine
+		draw.rectangle((0, self.y, font.getsize(label)[0], self.y + 8), fill=(0, 0, 0))
+		draw.text((0, self.y + fontYoffset), label, font=font,
+		  fill=routeColor)
+		  
+		x = self.x
 		if self.p.predictions == []: # No predictions to display
-			draw.text((x, self.y + fontYoffset + 8),
-			  'No Predictions', font=font, fill=noTimesColor)
+			draw.rectangle((width - font.getsize('XX')[0], self.y, width, self.y + 8), fill=(0, 0, 0))
+			draw.text((width - font.getsize('XX')[0] - 1, self.y + fontYoffset),
+			  'XX', font=font, fill=noTimesColor)
 		else:
 			isFirstShown = True
 			count        = 0
 			for p in self.p.predictions:
-				t = p - (currentTime - self.p.lastQueryTime)
+				t = p
 				m = int(t / 60)
 				if   m <= minTime:   continue
 				elif m <= shortTime: fill=shortTimeColor
@@ -120,34 +138,28 @@ class tile:
 					# be drawn in a goofball position
 					# so it's not cropped off bottom.
 					draw.text((x + 1,
-					  self.y + fontYoffset + 8 - 2),
+					  self.y + fontYoffset - 2),
 					  label, font=font, fill=minsColor)
 					x += font.getsize(label)[0]
 				label  = str(m)
-				draw.text((x, self.y + fontYoffset + 8),
+				self.predictionSize = font.getsize(label)[0]
+				draw.rectangle((width - font.getsize(label)[0], self.y, width, self.y + 8), fill=(0, 0, 0))
+				draw.text((width - font.getsize(label)[0] - 1, self.y + fontYoffset),
 				  label, font=font, fill=fill)
 				x     += font.getsize(label)[0]
 				count += 1
 				if count >= maxPredictions:
 					break
-			if count > 0:
-				draw.text((x, self.y + fontYoffset + 8),
-				  ' minutes', font=font, fill=minsColor)
-
 
 # Allocate list of tile objects, enough to cover screen while scrolling
 tileList = []
 if tileWidth >= width: tilesAcross = 2
 else:                  tilesAcross = int(math.ceil(width / tileWidth)) + 1
 
-nextPrediction = 0  # Index of predictList item to attach to tile
-for x in xrange(tilesAcross):
-	for y in xrange(0, 2):
-		tileList.append(tile(x * tileWidth + y * tileWidth / 2, 
-		  y * 17, predictList[nextPrediction]))
-		nextPrediction += 1
-		if nextPrediction >= len(predictList):
-			nextPrediction = 0
+y = 0;
+for pred in predictList:
+	tileList.append(tile(0, y * 8, pred))
+	y += 1
 
 # Initialization done; loop forever ------------------------------------------
 while True:
@@ -155,21 +167,22 @@ while True:
 	# Clear background
 	draw.rectangle((0, 0, width, height), fill=(0, 0, 0))
 
-	for t in tileList:
+	for t in tileList: 
+		
+		if font.getsize(t.p.displayDirection)[0] > 0:
+			t.x -= 1
+		
+		if t.x + font.getsize(t.p.displayDirection)[0] - font.getsize(t.p.displayLine)[0] <= 0:
+			t.x = width - t.predictionSize
+			
 		if t.x < width:        # Draw tile if onscreen
 			t.draw()
-		t.x -= 1               # Move left 1 pixel
-		if(t.x <= -tileWidth): # Off left edge?
-			t.x += tileWidth * tilesAcross     # Move off right &
-			t.p  = predictList[nextPrediction] # assign prediction
-			nextPrediction += 1                # Cycle predictions
-			if nextPrediction >= len(predictList):
-				nextPrediction = 0
 
 	# Try to keep timing uniform-ish; rather than sleeping a fixed time,
 	# interval since last frame is calculated, the gap time between this
 	# and desired frames/sec determines sleep time...occasionally if busy
 	# (e.g. polling server) there'll be no sleep at all.
+	# time.sleep(0.05)
 	currentTime = time.time()
 	timeDelta   = (1.0 / fps) - (currentTime - prevTime)
 	if(timeDelta > 0.0):

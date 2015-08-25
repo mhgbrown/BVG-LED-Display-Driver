@@ -1,12 +1,16 @@
-Adafruit-NextBus
-================
+# BVG LED Display Driver
 
-Python front-end for the NextBus schedule service, for Raspberry Pi, etc.
+This code drives a 64x32 LED matrix, displaying upcoming public transportation departures 
+from BVG based on certain stop specifications in the code.
 
-routefinder.py: for selecting bus routes/stops for use with the other scripts. Crude textual interface is best used w/terminal with scroll-back ability. Only need to use this for setup, hence the very basic implementation.
+## About
 
-predict.py: class that handles periodic queries to the NextBus server. Imported by other scripts; doesn't do anything on its own.
+Very rough at the moment.
 
-nextbus-simple.py: Minimal front-end to demonstrate use of predict.py. Prints to cosole every 5 seconds.
+Adapted from [Adafruit's Nextbus Transit Clock](https://learn.adafruit.com/nextbus-transit-clock-for-raspberry-pi)
 
-nextbus-matrix.py: Scrolling marquee using 32x32 RGB LED matrix. Requires rpi-rgb-led-matrix library: https://github.com/adafruit/rpi-rgb-led-matrix
+## Installation
+
+## Usage
+
+
