@@ -9,7 +9,11 @@ Very rough at the moment.
 
 Adapted from [Adafruit's Nextbus Transit Clock](https://learn.adafruit.com/nextbus-transit-clock-for-raspberry-pi)
 
-## Installation
+## Getting Started
+
+### Preparing The Raspberry Pi
+
+### Installation
 
 ## Usage
 
