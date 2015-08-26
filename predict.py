@@ -56,37 +56,34 @@ class predict:
 		time.sleep(initSleep)    # drift over time, no problem
 		while True:
 			dom = predict.req(self.data[2])
+			newList = []
 			
 			# Connection error
 			if dom is None:
 				self.displayDirection = 'Error'
-				print "There was a connection error, sowy :("
-				return
-
-			self.lastQueryTime = time.time()
-			
-			newList = []
-			matches = []
-			soonestCount = 0;
-			lineRegex = re.compile(self.data[1])
-			directionRegex = re.compile(self.data[3])
-			for stopInfo in dom[0][1]:
-				lineMatches = lineRegex.findall(stopInfo['line'])
-				if (lineMatches) and (self.data[3] in stopInfo['end']) and (stopInfo['remaining'] > 0):
-					if soonestCount == self.data[4]:
-						self.displayLine = stopInfo['line']
-						self.displayDirection = stopInfo['end']
-						newList.append(stopInfo['remaining'])
-						if lineMatches[0] != stopInfo['line']:
-							self.displayLine = self.displayLine.replace(lineMatches[0], '').strip()
-						break
-					
-					if lineMatches[0] in matches:
-						soonestCount += 1
-					else:
-						matches.append(lineMatches[0])
-					# if we've seen what the regex matched before +1
-					# if its a new thing, don't +1								
+			else:
+				self.lastQueryTime = time.time()
+				matches = []
+				soonestCount = 0;
+				lineRegex = re.compile(self.data[1])
+				directionRegex = re.compile(self.data[3])
+				for stopInfo in dom[0][1]:
+					lineMatches = lineRegex.findall(stopInfo['line'])
+					if (lineMatches) and (self.data[3] in stopInfo['end']) and (stopInfo['remaining'] > 0):
+						if soonestCount == self.data[4]:
+							self.displayLine = stopInfo['line']
+							self.displayDirection = stopInfo['end']
+							newList.append(stopInfo['remaining'])
+							if lineMatches[0] != stopInfo['line']:
+								self.displayLine = self.displayLine.replace(lineMatches[0], '').strip()
+							break
+						
+						if lineMatches[0] in matches:
+							soonestCount += 1
+						else:
+							matches.append(lineMatches[0])
+						# if we've seen what the regex matched before +1
+						# if its a new thing, don't +1								
 			
 			# set new list of predictions
 			self.predictions = newList
@@ -102,6 +99,7 @@ class predict:
 			  '?station=' + station)
 			raw = connection.read()
 			connection.close()
+			# TODO support ü, ß, etc.
 			raw = raw.decode('utf8').encode('ascii', 'replace')
 			jsonData = json.loads(raw)
 		except:
