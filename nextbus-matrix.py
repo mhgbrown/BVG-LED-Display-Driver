@@ -163,7 +163,6 @@ for pred in predictList:
 
 # Initialization done; loop forever ------------------------------------------
 while True:
-
 	# Clear background
 	draw.rectangle((0, 0, width, height), fill=(0, 0, 0))
 

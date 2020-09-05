@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# http://ip-api.com/json?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query
+
 # NextBus prediction class.  For each route/stop, NextBus server is polled
 # automatically at regular intervals.  Front-end app just needs to init
 # this with stop data, which can be found using the routefinder.py script.
@@ -60,6 +62,7 @@ class predict:
 			
 			# Connection error
 			if dom is None:
+				self.displayLine = 'XX'
 				self.displayDirection = 'Error'
 			else:
 				self.lastQueryTime = time.time()
